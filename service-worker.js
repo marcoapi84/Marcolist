@@ -1,4 +1,4 @@
-const CACHE_NAME = 'marcolist-cache-v1';
+const CACHE_NAME = 'marcolist-cache-v1.1';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -9,7 +9,6 @@ const ASSETS_TO_CACHE = [
   './icons/icon-512.png'
 ];
 
-// Fase di installazione: salvataggio asset principali in cache
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -18,7 +17,6 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Fase di attivazione: pulizia vecchie cache
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -33,13 +31,10 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Strategia di Fetch: Cache-First, Fallback sulla rete
 self.addEventListener('fetch', (event) => {
-  // Gestisce solo richieste GET relative alla stessa origine (file locali)
   if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
     return;
   }
-
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {

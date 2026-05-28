@@ -1,10 +1,8 @@
 // STATO DELL'APPLICAZIONE
 let state = {
-    user: null,
+    isLoggedIn: false,
     tasks: [],
     currentFilter: 'tutte',
-    currentMonth: new Date().getMonth(),
-    currentYear: new Date().getFullYear(),
     theme: 'light'
 };
 
@@ -35,10 +33,8 @@ const dom = {
     cancelEditBtn: document.getElementById('cancel-edit-btn'),
     editTaskId: document.getElementById('edit-task-id'),
     
-    calendarMonthYear: document.getElementById('calendar-month-year'),
-    calendarDays: document.getElementById('calendar-days'),
-    prevMonthBtn: document.getElementById('prev-month'),
-    nextMonthBtn: document.getElementById('next-month'),
+    calendarWeekLabel: document.getElementById('calendar-week-label'),
+    calendarWeekDays: document.getElementById('calendar-week-days'),
     
     filterButtons: document.querySelectorAll('.filter-btn'),
     tasksContainer: document.getElementById('tasks-container')
@@ -55,11 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // CARICAMENTO E SALVATAGGIO LOCALE
 function loadLocalData() {
     const savedTasks = localStorage.getItem('marcolist_tasks');
-    const savedUser = localStorage.getItem('marcolist_user');
+    const savedAuth = localStorage.getItem('marcolist_logged_in');
     const savedTheme = localStorage.getItem('marcolist_theme');
 
     if (savedTasks) state.tasks = JSON.parse(savedTasks);
-    if (savedUser) state.user = savedUser;
+    if (savedAuth === 'true') state.isLoggedIn = true;
     if (savedTheme) state.theme = savedTheme;
 }
 
@@ -69,7 +65,7 @@ function saveTasksToLocalStorage() {
 
 // GESTIONE AUTENTICAZIONE
 function checkAuthStatus() {
-    if (state.user === AUTH_CONFIG.username) {
+    if (state.isLoggedIn) {
         dom.loginScreen.classList.add('hidden');
         dom.mainScreen.classList.remove('hidden');
         renderDashboard();
@@ -103,15 +99,15 @@ function getTodayDateString() {
 
 // EVENT LISTENERS
 function setupEventListeners() {
-    // Login
+    // Form Login
     dom.loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const username = dom.usernameInput.value.trim();
         const password = dom.passwordInput.value;
 
         if (username === AUTH_CONFIG.username && password === AUTH_CONFIG.password) {
-            state.user = username;
-            localStorage.setItem('marcolist_user', username);
+            state.isLoggedIn = true;
+            localStorage.setItem('marcolist_logged_in', 'true');
             dom.loginError.classList.add('hidden');
             dom.usernameInput.value = '';
             dom.passwordInput.value = '';
@@ -121,14 +117,14 @@ function setupEventListeners() {
         }
     });
 
-    // Logout
+    // Tasto Logout
     dom.logoutBtn.addEventListener('click', () => {
-        state.user = null;
-        localStorage.removeItem('marcolist_user');
+        state.isLoggedIn = false;
+        localStorage.setItem('marcolist_logged_in', 'false');
         checkAuthStatus();
     });
 
-    // Toggle Tema
+    // Interruttore Tema
     dom.themeToggle.addEventListener('click', toggleTheme);
 
     // Cambio tipo task (Mostra/Nascondi Campi Data/Ora)
@@ -146,7 +142,7 @@ function setupEventListeners() {
         }
     });
 
-    // Sottomissione Form Task (Crea o Modifica)
+    // Inserimento o Modifica Task
     dom.taskForm.addEventListener('submit', (e) => {
         e.preventDefault();
         
@@ -163,7 +159,7 @@ function setupEventListeners() {
             } : t);
             resetTaskForm();
         } else {
-            // Logica Creazione
+            // Logica Nuova Creazione
             const newTask = {
                 id: Date.now().toString(),
                 text,
@@ -180,29 +176,10 @@ function setupEventListeners() {
         renderDashboard();
     });
 
-    // Annulla Modifica
+    // Annulla Modifica attiva
     dom.cancelEditBtn.addEventListener('click', resetTaskForm);
 
-    // Navigazione Calendario
-    dom.prevMonthBtn.addEventListener('click', () => {
-        state.currentMonth--;
-        if (state.currentMonth < 0) {
-            state.currentMonth = 11;
-            state.currentYear--;
-        }
-        renderCalendar();
-    });
-
-    dom.nextMonthBtn.addEventListener('click', () => {
-        state.currentMonth++;
-        if (state.currentMonth > 11) {
-            state.currentMonth = 0;
-            state.currentYear++;
-        }
-        renderCalendar();
-    });
-
-    // Filtri Clic
+    // Filtri di Scrematura Rapida
     dom.filterButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             dom.filterButtons.forEach(b => b.classList.remove('active'));
@@ -224,61 +201,69 @@ function resetTaskForm() {
     dom.cancelEditBtn.classList.add('hidden');
 }
 
-// DATI RENDERING
+// LOGICA RENDERING PANNELLO
 function renderDashboard() {
-    renderCalendar();
+    renderCompactCalendar();
     renderTaskList();
 }
 
-// RENDER CALENDARIO
-function renderCalendar() {
-    dom.calendarDays.innerHTML = '';
-    const mesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
-    dom.calendarMonthYear.textContent = `${mesi[state.currentMonth]} ${state.currentYear}`;
-
-    const primoGiornoMese = new Date(state.currentYear, state.currentMonth, 1).getDay();
-    // Conversione per far iniziare la settimana da Lunedì (0=Dom -> diventa 6, 1=Lun -> 0)
-    const shiftGiorno = primoGiornoMese === 0 ? 6 : primoGiornoMese - 1;
-    const giorniNelMese = new Date(state.currentYear, state.currentMonth + 1, 0).getDate();
-
-    // Spazi vuoti per inizio mese
-    for (let i = 0; i < shiftGiorno; i++) {
-        const div = document.createElement('div');
-        div.classList.add('calendar-day', 'empty');
-        dom.calendarDays.appendChild(div);
-    }
-
-    // Giorni reali del mese
-    const odierno = getTodayDateString();
+// RENDER CALENDARIO COMPATTO (Timeline Settimanale Meno Invasiva)
+function renderCompactCalendar() {
+    dom.calendarWeekDays.innerHTML = '';
     
-    for (let giorno = 1; giorno <= giorniNelMese; giorno++) {
-        const div = document.createElement('div');
-        div.classList.add('calendar-day');
-        div.textContent = giorno;
+    const giorniSettimana = ["Do", "Lu", "Ma", "Me", "Gi", "Ve", "Sa"];
+    const mesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+    
+    const oggi = new Date();
+    dom.calendarWeekLabel.textContent = `${mesi[oggi.getMonth()]} ${oggi.getFullYear()}`;
 
-        const meseStr = String(state.currentMonth + 1).padStart(2, '0');
-        const giornoStr = String(giorno).padStart(2, '0');
-        const dataCorrenteCard = `${state.currentYear}-${meseStr}-${giornoStr}`;
+    // Calcoliamo l'inizio della settimana corrente (Lunedì)
+    const giornoCorrente = oggi.getDay();
+    const distanzaDalLunedi = giornoCorrente === 0 ? -6 : 1 - giornoCorrente;
+    const lunediCorrente = new Date(oggi);
+    lunediCorrente.setDate(oggi.getDate() + distanzaDalLunedi);
 
-        if (dataCorrenteCard === odierno) {
-            div.classList.add('today');
+    const stringaOggi = getTodayDateString();
+
+    // Generiamo i 7 giorni della settimana
+    for (let i = 0; i < 7; i++) {
+        const dataGiorno = new Date(lunediCorrente);
+        dataGiorno.setDate(lunediCorrente.getDate() + i);
+
+        const dNome = giorniSettimana[dataGiorno.getDay()];
+        const dNumero = dataGiorno.getDate();
+        
+        const mStr = String(dataGiorno.getMonth() + 1).padStart(2, '0');
+        const gStr = String(dNumero).padStart(2, '0');
+        const stringaDataCard = `${dataGiorno.getFullYear()}-${mStr}-${gStr}`;
+
+        const card = document.createElement('div');
+        card.className = 'week-day-card';
+        
+        if (stringaDataCard === stringaOggi) {
+            card.classList.add('today');
         }
 
-        // Verifica se ci sono task in questa data
-        const haTask = state.tasks.some(t => t.type === 'pianificata' && t.date === dataCorrenteCard);
-        if (haTask) {
-            div.classList.add('has-task');
+        // Pallino se ci sono task pianificate in questo specifico giorno della settimana
+        const haTaskPianificate = state.tasks.some(t => t.type === 'pianificata' && t.date === stringaDataCard);
+        if (haTaskPianificate) {
+            card.classList.add('has-task');
         }
 
-        dom.calendarDays.appendChild(div);
+        card.innerHTML = `
+            <span class="day-name">${dNome}</span>
+            <span class="day-num">${dNumero}</span>
+        `;
+        dom.calendarWeekDays.appendChild(card);
     }
 }
 
-// RENDER LISTA TASK
+// RENDER LISTA TASK CON FILTRI DI SCREMATURA
 function renderTaskList() {
     dom.tasksContainer.innerHTML = '';
     const oggi = getTodayDateString();
 
+    // Applica il filtro solo se richiesto, altrimenti mostra "tutte" di base
     let tasksFiltrate = state.tasks.filter(task => {
         switch (state.currentFilter) {
             case 'oggi':
@@ -290,14 +275,13 @@ function renderTaskList() {
             case 'completate':
                 return task.completed;
             case 'tutte':
-                return true;
             default:
-                return true;
+                return true; // Mostra tutto l'elenco indistintamente
         }
     });
 
     if (tasksFiltrate.length === 0) {
-        dom.tasksContainer.innerHTML = `<li class="task-muted" style="text-align:center; padding:20px; list-style:none; color: var(--text-muted);">Nessuna attività trovata.</li>`;
+        dom.tasksContainer.innerHTML = `<li style="text-align:center; padding:24px; list-style:none; color: var(--text-muted); font-size:0.95rem;">Nessuna attività in questo filtro.</li>`;
         return;
     }
 
@@ -330,7 +314,7 @@ function renderTaskList() {
     });
 }
 
-// FUNZIONI DI AZIONE TASK INTERNA
+// AZIONI DELLE TASK ESTERNE (WINDOW BINDING)
 window.toggleTaskCompletion = function(id) {
     state.tasks = state.tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
     saveTasksToLocalStorage();
@@ -387,7 +371,7 @@ function escapeHtml(text) {
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('service-worker.js')
-            .then(reg => console.log('Service Worker registrato con successo.', reg.scope))
-            .catch(err => console.error('Errore registrazione Service Worker:', err));
+            .then(reg => console.log('Service Worker V1.1 registrato con successo.'))
+            .catch(err => console.error('Errore SW:', err));
     });
 }
