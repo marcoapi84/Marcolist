@@ -374,4 +374,31 @@ if ('serviceWorker' in navigator) {
             .then(reg => console.log('Service Worker V1.1 registrato con successo.'))
             .catch(err => console.error('Errore SW:', err));
     });
+}// AGGIUNGI IN FONDO A app.js
+
+// Richiede il permesso per le notifiche all'avvio
+if ('Notification' in window && Notification.permission !== 'granted') {
+    Notification.requestPermission();
 }
+
+// Invia la lista delle task aggiornata al Service Worker ogni volta che cambia lo stato
+function syncTasksWithServiceWorker() {
+    if ('navigator' in window && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+            type: 'SYNC_TASKS',
+            tasks: state.tasks
+        });
+    }
+}
+
+// Modifica la tua funzione esistente saveTasksToLocalStorage() includendo il sync:
+const vecchioSaveTasks = saveTasksToLocalStorage;
+saveTasksToLocalStorage = function() {
+    vecchioSaveTasks();
+    syncTasksWithServiceWorker();
+};
+
+// Quando il Service Worker si connette, gli inviamo subito le task
+navigator.serviceWorker.ready.then(() => {
+    setTimeout(syncTasksWithServiceWorker, 1000);
+});
