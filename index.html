@@ -1,76 +1,89 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Family App</title>
-  <meta name="theme-color" content="#0f766e" />
-  <meta name="description" content="Inventario casa e chat famiglia" />
-  <style>
-    :root{--bg:#f4f7f7;--card:#ffffff;--line:#d7e1df;--text:#18302e;--muted:#60706e;--primary:#0f766e;--primary-2:#0b5e58;--danger:#b42318;--warn:#b54708;--ok:#027a48;--chip:#e7f2f1;--shadow:0 8px 24px rgba(0,0,0,.08);--r:16px}
-    *{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
-    .wrap{max-width:760px;margin:0 auto;min-height:100vh}
-    .top{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:14px 16px;z-index:5;display:flex;justify-content:space-between;align-items:center}
-    .title{font-weight:700}.sub{font-size:12px;color:var(--muted)}
-    .main{padding:16px;display:grid;gap:16px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
-    .pad{padding:16px}.login{max-width:420px;margin:48px auto}.login h1{margin:0 0 8px}.login p{margin:0 0 18px;color:var(--muted)}
-    label{display:block;font-size:14px;margin:0 0 6px}.field{display:grid;gap:6px;margin-bottom:12px}
-    input,textarea,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;font-size:16px;background:#fff}
-    textarea{min-height:48px;resize:vertical}
-    button{border:0;background:var(--primary);color:#fff;padding:12px 14px;border-radius:12px;font-weight:700;cursor:pointer}
-    button:hover{background:var(--primary-2)} button.secondary{background:#fff;color:var(--text);border:1px solid var(--line)} button.danger{background:var(--danger)}
-    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.between{display:flex;justify-content:space-between;align-items:center;gap:12px}
-    .tabs{display:flex;background:#fff;border-bottom:1px solid var(--line)} .tab{flex:1;padding:12px;background:#fff;color:var(--muted);border-radius:0;font-weight:700}
-    .tab.active{color:var(--primary);box-shadow:inset 0 -3px 0 var(--primary)}
-    .muted{color:var(--muted)} .small{font-size:12px}.err{color:var(--danger);font-size:14px;margin-top:8px}.ok{color:var(--ok)}
-    .section-title{font-size:18px;font-weight:700}
-    .category{border-top:1px solid var(--line)} .category:first-child{border-top:0}
-    .category-head{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
-    .category-body{padding:0 16px 16px;display:none}.category.open .category-body{display:block}
-    .product{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 0;border-top:1px dashed var(--line)}
-    .product:first-child{border-top:0}.chip{display:inline-flex;align-items:center;gap:6px;background:var(--chip);color:var(--primary);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700}
-    .qty{display:flex;align-items:center;gap:8px}.qty b{min-width:20px;text-align:center}
-    .ghost{background:#fff;color:var(--primary);border:1px solid #b9d6d2}.warn{background:#fff7ed;color:var(--warn);border:1px solid #fed7aa}
-    .chat-box{display:grid;gap:12px}.msgs{display:grid;gap:10px;max-height:420px;overflow:auto;padding:12px}
-    .msg{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px}.msg .meta{font-size:12px;color:var(--muted);margin-bottom:6px}
-    .mine{border-color:#b9d6d2;background:#f0f9f8}.preview{max-width:160px;border-radius:12px;border:1px solid var(--line)}
-    .notice{padding:10px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;color:#9a3412;font-size:13px}
-    .hidden{display:none}.center{display:grid;place-items:center}.loader{padding:40px}.pill{font-size:12px;color:#fff;background:var(--ok);padding:4px 8px;border-radius:999px}
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MarcoList</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="style.css">
+
+<meta name="theme-color" content="#111827">
 </head>
+
 <body>
-  <div id="app" class="wrap"></div>
 
-  <script>
-    const SUPABASE_URL = 'https://xvhsttngrcogfjuyfmjb.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_HlBVOjZlsVBvueeOoawrpA_6Iw1gU9p';
+<div id="loginScreen" class="screen active">
 
-    let supabase = null;
-    let state = { session:null, profile:null, tab:'inventory', categories:[], products:[], messages:[], usersMap:{}, loading:true, error:'', previewUrl:'', previewFile:null, openCats:{} };
-    function safeText(v){ return (v || '').toString().replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
-    function fmtDate(v){ try { return new Date(v).toLocaleString('it-IT'); } catch { return ''; } }
-    function toast(msg){ alert(msg); }
-    function render(){ const app = document.getElementById('app'); if (!SUPABASE_URL.includes('https://') || !SUPABASE_ANON_KEY.startsWith('sb_')) { app.innerHTML = `<div class="main"><div class="card pad"><h2>Configurazione mancante</h2><p class="muted">Inserisci Project URL e Publishable key nel file HTML.</p></div></div>`; return; } if (state.loading) { app.innerHTML = `<div class="center loader"><div class="card pad">Caricamento...</div></div>`; return; } if (!state.session) { app.innerHTML = loginView(); bindLogin(); return; } app.innerHTML = appView(); bindApp(); }
-    function loginView(){ return `<div class="main"><div class="card pad login"><h1>Family App</h1><p>Inventario di casa + chat famiglia</p><div class="field"><label>Email</label><input id="email" type="email" placeholder="marco@..." /></div><div class="field"><label>Password</label><input id="password" type="password" placeholder="Password" /></div><button id="loginBtn">Accedi</button><div id="loginErr" class="err"></div></div></div>`; }
-    function appView(){ const username = safeText(state.profile?.username || 'Utente'); return `<div class="top"><div><div class="title">Family App</div><div class="sub">Ciao, ${username}</div></div><div class="row"><button class="secondary" id="refreshBtn">Aggiorna</button><button id="logoutBtn" class="secondary">Esci</button></div></div><div class="tabs"><button class="tab ${state.tab==='inventory'?'active':''}" id="tabInventory">Inventario</button><button class="tab ${state.tab==='chat'?'active':''}" id="tabChat">Chat</button></div><div class="main">${state.tab==='inventory' ? inventoryView() : chatView()}</div>`; }
-    function inventoryView(){ const cats = state.categories.map(cat => { const open = !!state.openCats[cat.id]; const products = state.products.filter(p => p.category_id === cat.id); return `<div class="card category ${open?'open':''}" data-cat="${cat.id}"><div class="category-head" data-toggle-cat="${cat.id}"><div><b>${safeText(cat.name)}</b> <span class="muted small">(${products.length} prodotti)</span></div><div>${open ? '▾' : '▸'}</div></div><div class="category-body"><div class="row" style="margin-bottom:12px"><input id="prod-${cat.id}" placeholder="Nuovo prodotto..." /><button data-add-product="${cat.id}">Aggiungi</button></div>${products.length ? products.map(p => productRow(p)).join('') : '<div class="muted small">Nessun prodotto in questa categoria.</div>'}</div></div>`; }).join(''); return `<div class="card pad"><div class="between"><div class="section-title">Categorie</div><div class="row"><input id="newCategory" placeholder="Nuova categoria..." /><button id="addCategoryBtn">Aggiungi categoria</button></div></div></div>${cats || '<div class="card pad muted">Nessuna categoria ancora.</div>'}`; }
-    function productRow(p){ const taken = p.taken_by ? state.usersMap[p.taken_by] : ''; const mine = p.taken_by && state.profile && p.taken_by === state.profile.id; return `<div class="product"><div><div><b>${safeText(p.name)}</b></div><div class="row small" style="margin-top:6px"><span class="chip">Quantità: ${p.quantity}</span>${taken ? `<span class="chip warn">Presa in carico da ${safeText(taken)}</span>` : ''}</div></div><div class="row"><div class="qty"><button class="secondary" data-dec="${p.id}">-</button><b>${p.quantity}</b><button class="secondary" data-inc="${p.id}">+</button></div>${!p.taken_by ? `<button class="ghost" data-take="${p.id}">Prendo io</button>` : ''}${mine ? `<button data-release="${p.id}">Sblocco</button>` : ''}</div></div>`; }
-    function chatView(){ const items = state.messages.map(m => { const mine = state.profile && m.user_id === state.profile.id; const name = safeText(state.usersMap[m.user_id] || 'Utente'); return `<div class="msg ${mine ? 'mine' : ''}"><div class="meta">${name} · ${fmtDate(m.created_at)}</div>${m.content ? `<div>${safeText(m.content)}</div>` : ''}${m.image_url ? `<div style="margin-top:8px"><img class="preview" src="${m.image_url}" alt="foto" /></div>` : ''}</div>`; }).join(''); return `<div class="notice">La chat è leggera: solo testo e foto. I messaggi vengono cancellati dopo 48 ore lato database.</div><div class="card chat-box"><div class="msgs" id="msgs">${items || '<div class="muted">Nessun messaggio.</div>'}</div><div class="pad"><div class="field"><label>Messaggio</label><textarea id="chatText" placeholder="Scrivi qui..."></textarea></div><div class="row" style="margin-bottom:10px"><input id="chatFile" type="file" accept="image/*" />${state.previewUrl ? `<img class="preview" src="${state.previewUrl}" alt="anteprima" />` : ''}</div><div class="row"><button id="sendMsgBtn">Invia</button><button class="secondary" id="clearPreviewBtn">Rimuovi foto</button></div></div></div>`; }
-    function bindLogin(){ document.getElementById('loginBtn').onclick = async () => { const email = document.getElementById('email').value.trim(); const password = document.getElementById('password').value; document.getElementById('loginErr').textContent = ''; try { const { data, error } = await supabase.auth.signInWithPassword({ email, password }); if (error) throw error; state.session = data.session; await bootstrapApp(); } catch (e) { document.getElementById('loginErr').textContent = e.message || 'Login non riuscito'; } }; }
-    function bindApp(){ document.getElementById('logoutBtn').onclick = async () => { await supabase.auth.signOut(); state.session = null; state.profile = null; render(); }; document.getElementById('refreshBtn').onclick = async () => { await loadAll(); render(); }; document.getElementById('tabInventory').onclick = () => { state.tab='inventory'; render(); }; document.getElementById('tabChat').onclick = () => { state.tab='chat'; render(); }; const addCategoryBtn = document.getElementById('addCategoryBtn'); if (addCategoryBtn) addCategoryBtn.onclick = addCategory; document.querySelectorAll('[data-toggle-cat]').forEach(el => el.onclick = () => { const id = el.dataset.toggleCat; state.openCats[id] = !state.openCats[id]; render(); }); document.querySelectorAll('[data-add-product]').forEach(el => el.onclick = async () => { const catId = el.dataset.addProduct; const name = document.getElementById('prod-' + catId).value.trim(); if (!name) return toast('Scrivi il nome del prodotto'); const { error } = await supabase.from('products').insert({ category_id: catId, name, quantity: 0, created_by: state.profile.id }); if (error) return toast(error.message); await loadAll(); render(); }); document.querySelectorAll('[data-inc]').forEach(el => el.onclick = () => changeQty(el.dataset.inc, 1)); document.querySelectorAll('[data-dec]').forEach(el => el.onclick = () => changeQty(el.dataset.dec, -1)); document.querySelectorAll('[data-take]').forEach(el => el.onclick = () => takeProduct(el.dataset.take)); document.querySelectorAll('[data-release]').forEach(el => el.onclick = () => releaseProduct(el.dataset.release)); const file = document.getElementById('chatFile'); if (file) file.onchange = () => { const f = file.files[0]; if (!f) return; if (!f.type.startsWith('image/')) { toast('Puoi allegare solo foto'); file.value=''; return; } state.previewFile = f; state.previewUrl = URL.createObjectURL(f); render(); }; const clearPreviewBtn = document.getElementById('clearPreviewBtn'); if (clearPreviewBtn) clearPreviewBtn.onclick = () => { state.previewFile = null; state.previewUrl = ''; render(); }; const sendMsgBtn = document.getElementById('sendMsgBtn'); if (sendMsgBtn) sendMsgBtn.onclick = sendMessage; }
-    async function changeQty(productId, delta){ const prod = state.products.find(p => p.id === productId); if (!prod) return; const quantity = Math.max(0, (prod.quantity || 0) + delta); const { error } = await supabase.from('products').update({ quantity }).eq('id', productId); if (error) return toast(error.message); await loadAll(); render(); }
-    async function takeProduct(productId){ const { error } = await supabase.from('products').update({ taken_by: state.profile.id, taken_at: new Date().toISOString() }).eq('id', productId).is('taken_by', null); if (error) return toast(error.message); await loadAll(); render(); }
-    async function releaseProduct(productId){ const prod = state.products.find(p => p.id === productId); if (!prod || prod.taken_by !== state.profile.id) return toast('Solo chi ha preso in carico può sbloccare'); const { error } = await supabase.from('products').update({ taken_by: null, taken_at: null }).eq('id', productId); if (error) return toast(error.message); await loadAll(); render(); }
-    async function addCategory(){ const name = document.getElementById('newCategory').value.trim(); if (!name) return toast('Scrivi il nome della categoria'); const { error } = await supabase.from('categories').insert({ name, created_by: state.profile.id }); if (error) return toast(error.message); await loadAll(); render(); }
-    async function sendMessage(){ const content = document.getElementById('chatText')?.value.trim() || ''; if (!content && !state.previewFile) return toast('Scrivi un messaggio o allega una foto'); let image_url = null; if (state.previewFile) { const ext = state.previewFile.name.split('.').pop() || 'jpg'; const path = `${state.profile.id}/${Date.now()}.${ext}`; const up = await supabase.storage.from('chat-images').upload(path, state.previewFile, { upsert: false }); if (up.error) return toast(up.error.message); const pub = supabase.storage.from('chat-images').getPublicUrl(path); image_url = pub.data.publicUrl; } const { error } = await supabase.from('messages').insert({ user_id: state.profile.id, content: content || null, image_url }); if (error) return toast(error.message); state.previewFile = null; state.previewUrl = ''; await loadAll(); state.tab = 'chat'; render(); }
-    async function loadAll(){ const uid = state.session.user.id; const [{ data: profile, error: pErr }, { data: categories, error: cErr }, { data: products, error: prErr }, { data: messages, error: mErr }, { data: profilesList, error: uErr }] = await Promise.all([ supabase.from('profiles').select('*').eq('id', uid).single(), supabase.from('categories').select('*').order('name'), supabase.from('products').select('*').order('name'), supabase.from('messages').select('*').gt('expires_at', new Date().toISOString()).order('created_at'), supabase.from('profiles').select('id, username') ]); if (pErr) throw pErr; if (cErr) throw cErr; if (prErr) throw prErr; if (mErr) throw mErr; if (uErr) throw uErr; state.profile = profile; state.categories = categories || []; state.products = products || []; state.messages = messages || []; state.usersMap = {}; (profilesList || []).forEach(x => state.usersMap[x.id] = x.username); state.categories.forEach(c => { if (state.openCats[c.id] === undefined) state.openCats[c.id] = true; }); }
-    async function bootstrapApp(){ try { await loadAll(); } catch (e) { state.error = e.message || 'Errore caricamento dati'; alert('Errore caricamento dati: ' + state.error + '
+<h1>MarcoList</h1>
 
-Controlla di aver aggiornato gli UUID in profiles e di aver inserito URL e key corretti.'); } render(); }
-    async function start(){ try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); const { data } = await supabase.auth.getSession(); state.session = data.session; state.loading = false; if (state.session) await bootstrapApp(); } catch (e) { state.loading = false; state.error = e.message || 'Errore iniziale'; document.getElementById('app').innerHTML = `<div class="main"><div class="card pad"><h2>Errore iniziale</h2><p class="muted">${safeText(state.error)}</p><p class="small muted">Controlla connessione internet, URL Supabase e Publishable key.</p></div></div>`; return; } render(); }
-    start();
-  </script>
+<div class="card">
+
+<input id="username" placeholder="Username">
+<input id="password" type="password" placeholder="Password">
+
+<button id="loginBtn">Entra</button>
+
+<p id="loginError"></p>
+
+</div>
+</div>
+
+<div id="appScreen" class="screen">
+
+<header>
+
+<h2>MarcoList</h2>
+
+<button id="themeToggle">🌙</button>
+
+</header>
+
+<section class="card">
+
+<input id="taskText" placeholder="Nuova attività">
+
+<select id="taskType">
+<option value="free">Libera</option>
+<option value="scheduled">Pianificata</option>
+</select>
+
+<input type="date" id="taskDate">
+<input type="time" id="taskTime">
+
+<button id="addTaskBtn">Aggiungi</button>
+
+</section>
+
+<section class="filters">
+
+<button data-filter="all">Tutte</button>
+<button data-filter="todo">Da fare</button>
+<button data-filter="done">Completate</button>
+<button data-filter="scheduled">Pianificate</button>
+<button data-filter="today">Oggi</button>
+
+</section>
+
+<section class="card">
+
+<h3>Calendario</h3>
+
+<div id="calendar"></div>
+
+</section>
+
+<section class="card">
+
+<h3>Attività</h3>
+
+<ul id="taskList"></ul>
+
+</section>
+
+</div>
+
+<script src="app.js"></script>
+
 </body>
 </html>
