@@ -1,89 +1,100 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>MarcoList</title>
-
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="style.css">
-
-<meta name="theme-color" content="#111827">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MarcoList</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
-
 <body>
 
-<div id="loginScreen" class="screen active">
+    <div id="login-screen" class="screen">
+        <div class="login-card">
+            <h1>MarcoList</h1>
+            <p class="subtitle">Gestione Personale Task</p>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Inserisci il tuo nome" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required>
+                </div>
+                <div id="login-error" class="error-message hidden">Credenziali non valide. Riprova.</div>
+                <button type="submit" class="btn btn-primary">Entra</button>
+            </form>
+        </div>
+    </div>
 
-<h1>MarcoList</h1>
+    <div id="main-screen" class="screen hidden">
+        <header class="main-header">
+            <div class="header-top">
+                <h2>Ciao, Marco</h2>
+                <div class="header-actions">
+                    <button id="theme-toggle" class="btn-icon" aria-label="Cambia tema">🌓</button>
+                    <button id="logout-btn" class="btn-icon" aria-label="Esci">🚪</button>
+                </div>
+            </div>
+            
+            <form id="task-form" class="task-form">
+                <input type="hidden" id="edit-task-id" value="">
+                <div class="input-row">
+                    <input type="text" id="task-text" placeholder="Cosa devi fare oggi?" required>
+                </div>
+                <div class="type-selector">
+                    <label class="radio-label">
+                        <input type="radio" name="task-type" value="libera" checked>
+                        <span>Libera</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="task-type" value="pianificata">
+                        <span>Pianificata</span>
+                    </label>
+                </div>
+                <div id="datetime-fields" class="datetime-fields hidden">
+                    <input type="date" id="task-date">
+                    <input type="time" id="task-time">
+                </div>
+                <button type="submit" id="submit-task-btn" class="btn btn-success">Aggiungi Task</button>
+                <button type="button" id="cancel-edit-btn" class="btn btn-secondary hidden">Annulla Modifica</button>
+            </form>
+        </header>
 
-<div class="card">
+        <main class="main-content">
+            <section class="calendar-section">
+                <div class="calendar-header">
+                    <button id="prev-month" class="btn-nav">&lt;</button>
+                    <h3 id="calendar-month-year">Mese Anno</h3>
+                    <button id="next-month" class="btn-nav">&gt;</button>
+                </div>
+                <div class="calendar-weekdays">
+                    <div>Lu</div><div>Ma</div><div>Me</div><div>Gi</div><div>Ve</div><div>Sa</div><div>Do</div>
+                </div>
+                <div id="calendar-days" class="calendar-days"></div>
+            </section>
 
-<input id="username" placeholder="Username">
-<input id="password" type="password" placeholder="Password">
+            <section class="filters-section">
+                <div class="filters-scroll">
+                    <button class="filter-btn active" data-filter="tutte">Tutte</button>
+                    <button class="filter-btn" data-filter="oggi">Oggi</button>
+                    <button class="filter-btn" data-filter="da-fare">Da Fare</button>
+                    <button class="filter-btn" data-filter="pianificate">Pianificate</button>
+                    <button class="filter-btn" data-filter="completate">Completate</button>
+                </div>
+            </section>
 
-<button id="loginBtn">Entra</button>
+            <section class="tasks-section">
+                <ul id="tasks-container" class="tasks-list"></ul>
+            </section>
+        </main>
+    </div>
 
-<p id="loginError"></p>
-
-</div>
-</div>
-
-<div id="appScreen" class="screen">
-
-<header>
-
-<h2>MarcoList</h2>
-
-<button id="themeToggle">🌙</button>
-
-</header>
-
-<section class="card">
-
-<input id="taskText" placeholder="Nuova attività">
-
-<select id="taskType">
-<option value="free">Libera</option>
-<option value="scheduled">Pianificata</option>
-</select>
-
-<input type="date" id="taskDate">
-<input type="time" id="taskTime">
-
-<button id="addTaskBtn">Aggiungi</button>
-
-</section>
-
-<section class="filters">
-
-<button data-filter="all">Tutte</button>
-<button data-filter="todo">Da fare</button>
-<button data-filter="done">Completate</button>
-<button data-filter="scheduled">Pianificate</button>
-<button data-filter="today">Oggi</button>
-
-</section>
-
-<section class="card">
-
-<h3>Calendario</h3>
-
-<div id="calendar"></div>
-
-</section>
-
-<section class="card">
-
-<h3>Attività</h3>
-
-<ul id="taskList"></ul>
-
-</section>
-
-</div>
-
-<script src="app.js"></script>
-
+    <script src="app.js"></script>
 </body>
 </html>
